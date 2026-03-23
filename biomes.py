@@ -1,24 +1,34 @@
-from sklearn.datasets import load_breast_cancer
-from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-import pandas as pd
+from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
+from sklearn.svm import SVC
 import numpy as np
+from helper import *
+from sklearn.preprocessing import StandardScaler
 
-breast_cancer = load_breast_cancer()
+scaler = StandardScaler()
 
-training_data, validation_data, training_labels, validation_labels = train_test_split(breast_cancer.data, breast_cancer.target, test_size=.3, random_state=1)
+regular_features, regular_labels = get_vectorized_data()
+r_training_data, r_testing_data, r_training_labels, r_testing_labels = train_test_split(regular_features, regular_labels, test_size=0.3, random_state=1)
 
-scores = []
-for i in np.arange(0, 10, 1):
-    classifier = SVC(C=1)
-    classifier.fit(training_data, training_labels)
-    scores.append(classifier.score(validation_data, validation_labels))
+tourney_features, tourney_labels = get_vectorized_data(_type='tourney')
+t_training_data, t_testing_data, t_training_labels, t_testing_labels = train_test_split(tourney_features, tourney_labels, test_size=0.3, random_state=1)
 
-x = np.arange(0, 10, 1)
-plt.xlabel('Gamma')
-plt.ylabel('Score')
-plt.title('Gamma and Score', fontsize=20)
-plt.legend()
-plt.plot(x, scores)
-plt.show()
+t_train_scaled = scaler.fit_transform(t_training_data)
+t_test_scaled = scaler.transform(t_testing_data)
+
+#forest = RandomForestClassifier(random_state=1)
+#forest.fit(r_training_data, r_training_labels)
+#print(forest.score(t_testing_data, t_testing_labels))
+
+
+#regression = LogisticRegression()
+#regression.fit(t_training_data, t_training_labels)
+#print(regression.score(t_testing_data, t_testing_labels))
+
+# RandomForest peak = 0.6063811034725894
+
+svc = SVC(C=.37)
+svc.fit(t_train_scaled, t_training_labels)
+print(svc.score(t_test_scaled, t_testing_labels))
