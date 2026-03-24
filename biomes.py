@@ -2,6 +2,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 import numpy as np
 from helper import *
