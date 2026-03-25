@@ -20,3 +20,6 @@ A collection of models trained on past NCAA games to predict future winners.
 This project is not available for public use or distribution.
 
 ## Video
+
+https://github.com/user-attachments/assets/38241623-ebeb-4297-bc3a-1cdfd1ed940f
+
