@@ -1,35 +1,46 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-import matplotlib.pyplot as plt
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-import numpy as np
 from helper import *
 from sklearn.preprocessing import StandardScaler
+import streamlit as st
+
+print(get_team_averages('Duke'))  # Sanity check
 
 scaler = StandardScaler()
 
-regular_features, regular_labels = get_vectorized_data()
-r_training_data, r_testing_data, r_training_labels, r_testing_labels = train_test_split(regular_features, regular_labels, test_size=0.3, random_state=1)
 
-tourney_features, tourney_labels = get_vectorized_data(_type='tourney')
-t_training_data, t_testing_data, t_training_labels, t_testing_labels = train_test_split(tourney_features, tourney_labels, test_size=0.3, random_state=1)
-
-t_train_scaled = scaler.fit_transform(t_training_data)
-t_test_scaled = scaler.transform(t_testing_data)
-
-#forest = RandomForestClassifier(random_state=1)
-#forest.fit(r_training_data, r_training_labels)
-#print(forest.score(t_testing_data, t_testing_labels))
+# Regular and Tourney datasets combined
+combined_data, combined_labels = get_vectorized_data(_type='both')
+combined_training, combined_testing, combined_training_labels, combined_test_labels = train_test_split(combined_data, combined_labels, test_size=0.3, random_state=1)
+c_train_scaled = scaler.fit_transform(combined_training)
+c_test_scaled = scaler.transform(combined_testing)
 
 
-#regression = LogisticRegression()
-#regression.fit(t_training_data, t_training_labels)
-#print(regression.score(t_testing_data, t_testing_labels))
+forest = RandomForestClassifier(random_state=1)
+forest.fit(combined_training, combined_training_labels)
+#print(forest.score(combined_testing, combined_test_labels))
 
-# RandomForest peak = 0.6063811034725894
+
+regression = LogisticRegression()
+regression.fit(combined_training, combined_training_labels)
+#print(regression.score(combined_testing, combined_test_labels))
+
 
 svc = SVC(C=.37)
-svc.fit(t_train_scaled, t_training_labels)
-print(svc.score(t_test_scaled, t_testing_labels))
+svc.fit(c_train_scaled, combined_training_labels)
+#print(svc.score(c_test_scaled, combined_test_labels))
+
+team_names = m_teams['TeamName'].tolist()
+
+st.title('March Madness Predictor')
+team1 = st.selectbox("Select Team 1", team_names)
+team2 = st.selectbox("Select Team 2", team_names)
+
+if st.button("Predict Winner"):
+    if not team1 or not team2:
+        st.warning("Please enter both names")
+    else:
+        winner = team1 if predict_winner(team1, team2, svc, regression, forest) == 1 else team2
+        st.success(f'The predicted winner is: {winner}')

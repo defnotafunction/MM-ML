@@ -3,7 +3,7 @@ import random
 import numpy as np
 
 # TEAM STATS
-recent_seasons = [2023, 2024, 2025]
+recent_seasons = [2022, 2023, 2024, 2025]
 
 regular_stats = pd.read_csv("MRegularSeasonDetailedResults.csv")
 tourney_stats = pd.read_csv("MNCAATourneyDetailedResults.csv")
@@ -31,14 +31,14 @@ def get_id_from_teamname(team_name: str) -> int:
     row = m_teams[m_teams['TeamName'] == team_name]
     return row.index[0]
 
-def get_recent_team_stats(dataframe: pd.DataFrame):
+def get_recent_team_stats(dataframe: pd.DataFrame, recent_years: int):
     """Filters the database, removing all rows that contains seasons before 2020."""
-    return dataframe[dataframe['Season'].isin(recent_seasons)]
+    return dataframe[dataframe['Season'].isin(recent_years)]
 
-def create_regular_averages_frame() -> pd.DataFrame:
+def create_regular_averages_frame(seasons=recent_seasons) -> pd.DataFrame:
     """Uses the recent regular season statistics to make a table with the average stats for each team."""
     teams_averages = {}
-    regular_stats_recent = get_recent_team_stats(regular_stats)
+    regular_stats_recent = get_recent_team_stats(regular_stats, seasons)
 
     for team_id in all_team_ids:
         team_wins = regular_stats_recent[regular_stats_recent['WTeamID'] == team_id]
@@ -52,10 +52,10 @@ def create_regular_averages_frame() -> pd.DataFrame:
 
     return pd.DataFrame(teams_averages).T
 
-def create_tourney_averages_frame() -> pd.DataFrame:
+def create_tourney_averages_frame(seasons=recent_seasons) -> pd.DataFrame:
     """Uses the recent tourney season statistics to make a table with the average stats for each team."""
     teams_averages = {}
-    tourney_stats_recent = get_recent_team_stats(tourney_stats)
+    tourney_stats_recent = get_recent_team_stats(tourney_stats, seasons)
 
     for team_id in all_team_ids:
         team_wins = tourney_stats_recent[tourney_stats_recent['WTeamID'] == team_id]
@@ -69,18 +69,38 @@ def create_tourney_averages_frame() -> pd.DataFrame:
 
     return pd.DataFrame(teams_averages).T
 
+def get_team_averages(team_name) -> pd.Series:
+    """Gets the average stats of a team"""
+    team_id = get_id_from_teamname(team_name)
+    regular_avg = create_regular_averages_frame().loc[team_id]
+    tourney_avg = create_tourney_averages_frame().loc[team_id].fillna(regular_avg)
+    combined_avg = pd.concat([regular_avg, tourney_avg], axis=0)
+    return combined_avg
 
+def get_vectorized_data_from_teams(team1, team2):
+    team1_avg, team2_avg = get_team_averages(team1), get_team_averages(team2)
+    differences = [t1 - t2 for t1, t2 in zip(team1_avg.values, team2_avg.values)]
+    return differences
 
-def get_vectorized_data(seed=1, _type: str ='regular'):
+def get_vectorized_data(seed=1, _type: str ='regular', seasons: list = recent_seasons):
     random.seed(seed)
     if _type == 'regular':
-        regular_averages = create_regular_averages_frame()
+        regular_averages = create_regular_averages_frame(seasons)
         team_stats_dict = regular_averages.to_dict(orient='index')
         valid_team_ids = set(team_stats_dict.keys())
-    else:
-        tourney_averages = create_tourney_averages_frame()
+    elif _type == 'tourney':
+        tourney_averages = create_tourney_averages_frame(seasons)
         team_stats_dict = tourney_averages.to_dict(orient='index')
         valid_team_ids = set(tourney_averages.index)
+    else:
+        combined = create_regular_averages_frame(seasons).join(
+                                            create_tourney_averages_frame(seasons),
+                                            how='inner',
+                                            lsuffix='_reg',
+                                            rsuffix='_tourney'
+                                        )
+        team_stats_dict = combined.to_dict(orient='index')
+        valid_team_ids = set(combined.index)
 
     features = []
     labels = []
@@ -111,3 +131,12 @@ def get_vectorized_data(seed=1, _type: str ='regular'):
         features.append(differences)
 
     return np.array(features), np.array(labels)
+
+def get_mode_of_predictions(features, *models):
+    predictions = [model.predict([features])[0] for model in models]
+    return max(set(predictions), key=predictions.count)
+
+def predict_winner(team1, team2, *models):
+    features = get_vectorized_data_from_teams(team1, team2)
+    prediction = get_mode_of_predictions(features, *models)
+    return prediction
