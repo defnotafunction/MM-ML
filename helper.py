@@ -5,8 +5,8 @@ import numpy as np
 # TEAM STATS
 recent_seasons = [2022, 2023, 2024, 2025]
 
-regular_stats = pd.read_csv("MRegularSeasonDetailedResults.csv")
-tourney_stats = pd.read_csv("MNCAATourneyDetailedResults.csv")
+regular_stats = pd.read_csv("MMData/MRegularSeasonDetailedResults.csv")
+tourney_stats = pd.read_csv("MMData/MNCAATourneyDetailedResults.csv")
 
 stats_columns = [
     'FGM', 'FGA', 'FGM3', 'FGA3', 'FTM', 'FTA',
@@ -16,7 +16,7 @@ win_stats_columns = [f'W{s}' for s in stats_columns]
 lost_stats_columns = [f'L{s}' for s in stats_columns]
 
 # TEAM IDS
-m_teams = pd.read_csv('MTeams.csv')
+m_teams = pd.read_csv('MMData/MTeams.csv')
 all_team_ids = m_teams['TeamID'].tolist()
 
 m_teams.set_index('TeamID', inplace=True)

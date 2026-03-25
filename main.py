@@ -6,31 +6,27 @@ from helper import *
 from sklearn.preprocessing import StandardScaler
 import streamlit as st
 
-print(get_team_averages('Duke'))  # Sanity check
+@st.cache_resource
+def train_models():
+    scaler = StandardScaler()
+    # Regular and Tourney datasets combined
+    combined_data, combined_labels = get_vectorized_data(_type='both')
+    combined_training, combined_testing, combined_training_labels, combined_test_labels = train_test_split(combined_data, combined_labels, test_size=0.3, random_state=1)
+    c_train_scaled = scaler.fit_transform(combined_training)
+    c_test_scaled = scaler.transform(combined_testing)
 
-scaler = StandardScaler()
+    forest = RandomForestClassifier(random_state=1)
+    forest.fit(combined_training, combined_training_labels)
 
+    regression = LogisticRegression()
+    regression.fit(combined_training, combined_training_labels)
 
-# Regular and Tourney datasets combined
-combined_data, combined_labels = get_vectorized_data(_type='both')
-combined_training, combined_testing, combined_training_labels, combined_test_labels = train_test_split(combined_data, combined_labels, test_size=0.3, random_state=1)
-c_train_scaled = scaler.fit_transform(combined_training)
-c_test_scaled = scaler.transform(combined_testing)
+    svc = SVC(C=.37)
+    svc.fit(c_train_scaled, combined_training_labels)
+    
+    return svc, regression, forest
 
-
-forest = RandomForestClassifier(random_state=1)
-forest.fit(combined_training, combined_training_labels)
-#print(forest.score(combined_testing, combined_test_labels))
-
-
-regression = LogisticRegression()
-regression.fit(combined_training, combined_training_labels)
-#print(regression.score(combined_testing, combined_test_labels))
-
-
-svc = SVC(C=.37)
-svc.fit(c_train_scaled, combined_training_labels)
-#print(svc.score(c_test_scaled, combined_test_labels))
+svc, regression, forest = train_models()
 
 team_names = m_teams['TeamName'].tolist()
 
