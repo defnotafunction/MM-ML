@@ -13,7 +13,6 @@ def train_forest():
     return forest
 
 forest = train_forest()
-print(forest)
 team_names = m_teams['TeamName'].tolist()
 
 st.title('March Madness Predictor')
